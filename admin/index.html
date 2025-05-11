@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Admin - Calculadora de Deudas (Firebase)</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #f0f0f0;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: auto;
+      background-color: #1f1f1f;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    }
+    input, select {
+      padding: 10px;
+      margin: 8px;
+      border-radius: 5px;
+      font-size: 16px;
+      display: block;
+      width: 80%;
+      margin-left: auto;
+      margin-right: auto;
+      border: 1px solid #444;
+      background-color: #2a2a2a;
+      color: #f0f0f0;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px auto;
+      border: none;
+      border-radius: 5px;
+      font-size: 16px;
+      background-color: #00c3ff;
+      color: white;
+      cursor: pointer;
+      display: block;
+    }
+    p.autor {
+      color:#00c3ff;
+      font-weight: bold;
+      font-size: 16px;
+    }
+    #formulario {
+      display: none;
+    }
+    #tablaSaldos {
+      margin-top: 20px;
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #444;
+      padding: 10px;
+    }
+    th {
+      background-color: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Admin - Calculadora de Deudas</h2>
+    <p class="autor">By Miguel Frías</p>
+
+    <div id="login">
+      <input type="password" id="password" placeholder="Contraseña">
+      <button onclick="verificar()">Ingresar</button>
+      <p id="error" style="color: red;"></p>
+    </div>
+
+    <div id="formulario">
+      <h3>Agregar Movimiento</h3>
+      <select id="persona">
+        <option>Lucia</option>
+        <option>Estefanía</option>
+        <option>Isabel</option>
+        <option>Adolfo</option>
+        <option>Marcos</option>
+        <option>Choncho</option>
+        <option>Sofía</option>
+      </select>
+      <input type="number" id="monto" placeholder="Ej. 700 o -500">
+
+      <h3>Agregar a Todos</h3>
+      <input type="number" id="montoTodos" placeholder="Ej. 700 o -500">
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getDatabase, ref, get, set } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+    
+const firebaseConfig = {
+  apiKey: "AIzaSyDasC9zZqvp592gSRfD9iSmm7Ul5vdnl8M",
+  authDomain: "calcu-fire.firebaseapp.com",
+  databaseURL: "https://calcu-fire-default-rtdb.firebaseio.com",
+  projectId: "calcu-fire",
+  storageBucket: "calcu-fire.firebasestorage.app",
+  messagingSenderId: "533736810197",
+  appId: "1:533736810197:web:615a3db71b015eec7a245c"
+};
+
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const personas = ["Lucia", "Estefanía", "Isabel", "Adolfo", "Marcos", "Choncho", "Sofía"];
+
+    window.verificar = function () {
+      const pass = document.getElementById("password").value;
+      if (pass === "1234") {
+        document.getElementById("login").style.display = "none";
+        document.getElementById("formulario").style.display = "block";
+
+        document.getElementById("monto").addEventListener("keypress", function(event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            guardarMovimiento();
+          }
+        });
+
+        document.getElementById("montoTodos").addEventListener("keypress", function(event) {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            agregarATodos();
+          }
+        });
+      } else {
+        document.getElementById("error").textContent = "Contraseña incorrecta";
+      }
+    }
+
+    window.guardarMovimiento = async function () {
+      const persona = document.getElementById("persona").value;
+      const monto = parseFloat(document.getElementById("monto").value);
+      if (!isNaN(monto)) {
+        const saldoRef = ref(db, "saldos/" + persona);
+        const snapshot = await get(saldoRef);
+        const actual = snapshot.exists() ? snapshot.val() : 0;
+        await set(saldoRef, actual + monto);
+        document.getElementById("monto").value = "";
+      }
+    }
+
+    window.agregarATodos = async function () {
+      const monto = parseFloat(document.getElementById("montoTodos").value);
+      if (!isNaN(monto)) {
+        for (const persona of personas) {
+          const saldoRef = ref(db, "saldos/" + persona);
+          const snapshot = await get(saldoRef);
+          const actual = snapshot.exists() ? snapshot.val() : 0;
+          await set(saldoRef, actual + monto);
+        }
+        document.getElementById("montoTodos").value = "";
+      }
+    }
+
+    document.getElementById("password").addEventListener("keypress", function(event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        verificar();
+      }
+    });
+  </script>
+</body>
+</html>
